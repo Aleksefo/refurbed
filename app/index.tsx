@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useMemo, useCallback } from 'react';
 import { FlatList, Text, Pressable, View, StyleSheet, ViewToken } from 'react-native';
 import { useRouter, useNavigation } from 'expo-router';
 import { MOCK_DEALS, Deal } from '@/data/mockDeals';
@@ -6,6 +6,7 @@ import { analytics } from '@/services/analytics';
 import { featureFlags } from '@/services/featureFlags';
 import MaintenanceWarning from '@/components/MaintenanceWarning';
 import FeatureFlagToggle from '@/components/FeatureFlagToggle';
+import DealListItem from '@/components/DealListItem';
 
 type SortOption = 'price' | 'score';
 
@@ -34,6 +35,49 @@ export default function DealsListScreen() {
     }
   ).current;
 
+  const filteredAndSortedDeals = useMemo(() => {
+    let deals = [...MOCK_DEALS];
+
+    if (minScore > 0) {
+      deals = deals.filter((deal) => deal.refurbed_score >= minScore);
+    }
+
+    deals.sort((a, b) => {
+      if (sortBy === 'price') {
+        return a.price - b.price;
+      } else {
+        return b.refurbed_score - a.refurbed_score;
+      }
+    });
+
+    return deals;
+  }, [sortBy, minScore]);
+
+  const handleDealClick = useCallback(
+    (deal: Deal) => {
+      analytics.trackDealClick({
+        dealId: deal.id,
+        title: deal.title,
+      });
+      router.push(`/details?id=${deal.id}`);
+    },
+    [router]
+  );
+
+  const keyExtractor = useCallback((item: Deal) => item.id, []);
+
+  const viewabilityConfig = useMemo(
+    () => ({
+      itemVisiblePercentThreshold: 50,
+    }),
+    []
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: Deal }) => <DealListItem deal={item} onPress={handleDealClick} />,
+    [handleDealClick]
+  );
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -51,32 +95,6 @@ export default function DealsListScreen() {
   if (!featureEnabled) {
     return <MaintenanceWarning />;
   }
-
-  const getFilteredAndSortedDeals = (): Deal[] => {
-    let deals = [...MOCK_DEALS];
-
-    if (minScore > 0) {
-      deals = deals.filter((deal) => deal.refurbed_score >= minScore);
-    }
-
-    deals.sort((a, b) => {
-      if (sortBy === 'price') {
-        return a.price - b.price;
-      } else {
-        return b.refurbed_score - a.refurbed_score;
-      }
-    });
-
-    return deals;
-  };
-
-  const handleDealClick = (deal: Deal) => {
-    analytics.trackDealClick({
-      dealId: deal.id,
-      title: deal.title,
-    });
-    router.push(`/details?id=${deal.id}`);
-  };
 
   return (
     <View style={styles.container}>
@@ -101,23 +119,16 @@ export default function DealsListScreen() {
         </Pressable>
       </View>
       <FlatList
-        data={getFilteredAndSortedDeals()}
-        keyExtractor={(item) => item.id}
+        data={filteredAndSortedDeals}
+        keyExtractor={keyExtractor}
         onViewableItemsChanged={handleViewableItemsChanged}
-        viewabilityConfig={{
-          itemVisiblePercentThreshold: 50,
-        }}
-        renderItem={({ item }) => (
-          <Pressable
-            style={styles.item}
-            onPress={() => handleDealClick(item)}
-          >
-            <Text>{item.title}</Text>
-            <Text>€{item.price}</Text>
-            <Text>{item.discount}% off</Text>
-            <Text>Refurbed Score: {item.refurbed_score}</Text>
-          </Pressable>
-        )}
+        viewabilityConfig={viewabilityConfig}
+        renderItem={renderItem}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
+        initialNumToRender={10}
+        windowSize={5}
       />
     </View>
   );
@@ -142,10 +153,5 @@ const styles = StyleSheet.create({
   },
   activeButton: {
     backgroundColor: '#007AFF',
-  },
-  item: {
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
   },
 });
