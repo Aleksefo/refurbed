@@ -1,24 +1,23 @@
 import { FlatList, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-
-const DATA = [
-  { id: '1', name: 'iPhone 10' },
-  { id: '2', name: 'Samsung 23' },
-];
+import { MOCK_DEALS } from '@/data/mockDeals';
 
 export default function DealsListScreen() {
   const router = useRouter();
 
   return (
     <FlatList
-      data={DATA}
+      data={MOCK_DEALS}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => (
         <Pressable
           style={styles.item}
-          onPress={() => router.push(`/details?id=${item.id}&name=${item.name}`)}
+          onPress={() => router.push(`/details?id=${item.id}`)}
         >
-          <Text>{item.name}</Text>
+          <Text>{item.title}</Text>
+          <Text>€{item.price}</Text>
+          <Text>{item.discount}% off</Text>
+          <Text>Refurbed Score: {item.refurbed_score}</Text>
         </Pressable>
       )}
     />
