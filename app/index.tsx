@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { FlatList, Text, Pressable, View, StyleSheet } from 'react-native';
+import { useState, useRef } from 'react';
+import { FlatList, Text, Pressable, View, StyleSheet, ViewToken } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MOCK_DEALS, Deal } from '@/data/mockDeals';
+import { analytics } from '@/services/analytics';
 
 type SortOption = 'price' | 'score';
 
@@ -9,6 +10,7 @@ export default function DealsListScreen() {
   const router = useRouter();
   const [sortBy, setSortBy] = useState<SortOption>('price');
   const [minScore, setMinScore] = useState<number>(0);
+  const viewedDeals = useRef(new Set<string>());
 
   const getFilteredAndSortedDeals = (): Deal[] => {
     let deals = [...MOCK_DEALS];
@@ -26,6 +28,31 @@ export default function DealsListScreen() {
     });
 
     return deals;
+  };
+
+  const handleViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      viewableItems.forEach((viewableItem) => {
+        const deal = viewableItem.item as Deal;
+        if (!viewedDeals.current.has(deal.id)) {
+          viewedDeals.current.add(deal.id);
+          analytics.trackDealImpression({
+            dealId: deal.id,
+            title: deal.title,
+            price: deal.price,
+            refurbed_score: deal.refurbed_score,
+          });
+        }
+      });
+    }
+  ).current;
+
+  const handleDealClick = (deal: Deal) => {
+    analytics.trackDealClick({
+      dealId: deal.id,
+      title: deal.title,
+    });
+    router.push(`/details?id=${deal.id}`);
   };
 
   return (
@@ -53,10 +80,14 @@ export default function DealsListScreen() {
       <FlatList
         data={getFilteredAndSortedDeals()}
         keyExtractor={(item) => item.id}
+        onViewableItemsChanged={handleViewableItemsChanged}
+        viewabilityConfig={{
+          itemVisiblePercentThreshold: 50,
+        }}
         renderItem={({ item }) => (
           <Pressable
             style={styles.item}
-            onPress={() => router.push(`/details?id=${item.id}`)}
+            onPress={() => handleDealClick(item)}
           >
             <Text>{item.title}</Text>
             <Text>€{item.price}</Text>
