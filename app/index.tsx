@@ -89,19 +89,25 @@ export default function DealsListScreen() {
           style={[styles.button, sortBy === 'price' && styles.activeButton]}
           onPress={() => setSortBy('price')}
         >
-          <Text>Sort by Price</Text>
+          <Text style={[styles.buttonText, sortBy === 'price' && styles.activeButtonText]}>
+            Price
+          </Text>
         </Pressable>
         <Pressable
           style={[styles.button, sortBy === 'score' && styles.activeButton]}
           onPress={() => setSortBy('score')}
         >
-          <Text>Sort by Score</Text>
+          <Text style={[styles.buttonText, sortBy === 'score' && styles.activeButtonText]}>
+            Score
+          </Text>
         </Pressable>
         <Pressable
           style={[styles.button, minScore === 90 && styles.activeButton]}
           onPress={() => setMinScore(minScore === 90 ? 0 : 90)}
         >
-          <Text>Score ≥ 90</Text>
+          <Text style={[styles.buttonText, minScore === 90 && styles.activeButtonText]}>
+            Score ≥ 90
+          </Text>
         </Pressable>
       </View>
       <FlatList
@@ -115,6 +121,7 @@ export default function DealsListScreen() {
         updateCellsBatchingPeriod={50}
         initialNumToRender={10}
         windowSize={5}
+        contentContainerStyle={styles.listContent}
       />
     </View>
   );
@@ -123,21 +130,37 @@ export default function DealsListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f5f5f5',
   },
   controlsBar: {
     flexDirection: 'row',
-    padding: 10,
-    gap: 10,
+    padding: 12,
+    gap: 8,
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderBottomColor: '#e0e0e0',
   },
   button: {
-    padding: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
+    borderColor: '#d0d0d0',
+    borderRadius: 8,
+    backgroundColor: '#fff',
   },
   activeButton: {
     backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  buttonText: {
+    fontSize: 13,
+    color: '#333',
+  },
+  activeButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  listContent: {
+    paddingVertical: 8,
   },
 });
