@@ -7,8 +7,7 @@ import { featureFlags } from '@/services/featureFlags';
 import MaintenanceWarning from '@/components/MaintenanceWarning';
 import FeatureFlagToggle from '@/components/FeatureFlagToggle';
 import DealListItem from '@/components/DealListItem';
-
-type SortOption = 'price' | 'score';
+import { filterAndSortDeals, SortOption } from '@/utils/dealFilters';
 
 export default function DealsListScreen() {
   const router = useRouter();
@@ -35,23 +34,10 @@ export default function DealsListScreen() {
     }
   ).current;
 
-  const filteredAndSortedDeals = useMemo(() => {
-    let deals = [...MOCK_DEALS];
-
-    if (minScore > 0) {
-      deals = deals.filter((deal) => deal.refurbed_score >= minScore);
-    }
-
-    deals.sort((a, b) => {
-      if (sortBy === 'price') {
-        return a.price - b.price;
-      } else {
-        return b.refurbed_score - a.refurbed_score;
-      }
-    });
-
-    return deals;
-  }, [sortBy, minScore]);
+  const filteredAndSortedDeals = useMemo(
+    () => filterAndSortDeals(MOCK_DEALS, sortBy, minScore),
+    [sortBy, minScore]
+  );
 
   const handleDealClick = useCallback(
     (deal: Deal) => {
