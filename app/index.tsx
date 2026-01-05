@@ -1,4 +1,5 @@
-import { FlatList, Text, View, StyleSheet } from 'react-native';
+import { FlatList, Text, Pressable, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 
 const DATA = [
   { id: '1', name: 'iPhone 10' },
@@ -6,14 +7,19 @@ const DATA = [
 ];
 
 export default function DealsListScreen() {
+  const router = useRouter();
+
   return (
     <FlatList
       data={DATA}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => (
-        <View style={styles.item}>
+        <Pressable
+          style={styles.item}
+          onPress={() => router.push(`/details?id=${item.id}&name=${item.name}`)}
+        >
           <Text>{item.name}</Text>
-        </View>
+        </Pressable>
       )}
     />
   );
