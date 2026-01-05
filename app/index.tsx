@@ -1,16 +1,56 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useLayoutEffect } from 'react';
 import { FlatList, Text, Pressable, View, StyleSheet, ViewToken } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import { MOCK_DEALS, Deal } from '@/data/mockDeals';
 import { analytics } from '@/services/analytics';
+import { featureFlags } from '@/services/featureFlags';
+import MaintenanceWarning from '@/components/MaintenanceWarning';
+import FeatureFlagToggle from '@/components/FeatureFlagToggle';
 
 type SortOption = 'price' | 'score';
 
 export default function DealsListScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const [sortBy, setSortBy] = useState<SortOption>('price');
   const [minScore, setMinScore] = useState<number>(0);
+  const [featureEnabled, setFeatureEnabled] = useState(featureFlags.isEnabled('showDealsSpotlight'));
   const viewedDeals = useRef(new Set<string>());
+
+  const handleViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      viewableItems.forEach((viewableItem) => {
+        const deal = viewableItem.item as Deal;
+        if (!viewedDeals.current.has(deal.id)) {
+          viewedDeals.current.add(deal.id);
+          analytics.trackDealImpression({
+            dealId: deal.id,
+            title: deal.title,
+            price: deal.price,
+            refurbed_score: deal.refurbed_score,
+          });
+        }
+      });
+    }
+  ).current;
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <FeatureFlagToggle
+          onToggle={() => {
+            const newValue = !featureEnabled;
+            featureFlags.setFlag('showDealsSpotlight', newValue);
+            setFeatureEnabled(newValue);
+          }}
+        />
+      ),
+    });
+  }, [navigation, featureEnabled]);
+
+  if (!featureEnabled) {
+    return <MaintenanceWarning />;
+  }
 
   const getFilteredAndSortedDeals = (): Deal[] => {
     let deals = [...MOCK_DEALS];
@@ -29,23 +69,6 @@ export default function DealsListScreen() {
 
     return deals;
   };
-
-  const handleViewableItemsChanged = useRef(
-    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      viewableItems.forEach((viewableItem) => {
-        const deal = viewableItem.item as Deal;
-        if (!viewedDeals.current.has(deal.id)) {
-          viewedDeals.current.add(deal.id);
-          analytics.trackDealImpression({
-            dealId: deal.id,
-            title: deal.title,
-            price: deal.price,
-            refurbed_score: deal.refurbed_score,
-          });
-        }
-      });
-    }
-  ).current;
 
   const handleDealClick = (deal: Deal) => {
     analytics.trackDealClick({
