@@ -16,13 +16,13 @@ A React Native mobile app showcasing Deals Spotlight feature with filtering, sor
 yarn install
 ```
 ### Running the App
-
+```
 yarn start
 
 yarn ios
 
 yarn android
-
+```
 ## Running tests
 ```bash
 yarn test
@@ -93,7 +93,7 @@ For the initial release I would use the standard path of internal testing/testfl
 Normally I would also use this approach for a regularly scheduled released that are not time-sensitive.
 
 If I need to publish a release fast (e.g. a critical bug-fix) I would use Expo Updates for OTA.
-It can also be used for some minor UI updates, feature flag toggles, etc, but usually it is safer to use it only for something critical since both Google and Apple do not appreaciate developers going around their respective stores and might cause us issues long-term.
+It can also be used for some minor UI updates, feature flag toggles, etc, but usually it is safer to use it only for something critical since both Google and Apple do not appreciate developers going around their respective stores and might cause us issues long-term.
 
 If I need to update feature flags or minimum required app version, for example, I prefer to use something like Firebase Remote config.
 
